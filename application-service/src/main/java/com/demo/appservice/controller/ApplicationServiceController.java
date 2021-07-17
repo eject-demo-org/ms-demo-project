@@ -12,8 +12,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.demo.appservice.entity.Application;
 import com.demo.appservice.service.ApplicationService;
+import com.demo.appservice.vo.ApplicationCreationRequest;
 import com.demo.appservice.vo.ApplicationCreationResponse;
 
 @RestController
@@ -24,7 +24,7 @@ public class ApplicationServiceController {
 	private ApplicationService applicationService;
 	
 	@PostMapping("/addApplication")
-	public ResponseEntity<ApplicationCreationResponse> addApplication(@RequestBody Application application , Locale locale) {
+	public ResponseEntity<ApplicationCreationResponse> addApplication(@RequestBody ApplicationCreationRequest application , Locale locale) {
 		 return new ResponseEntity<ApplicationCreationResponse>(applicationService.createApplication(application ,locale)
 				,HttpStatus.OK);
 	}

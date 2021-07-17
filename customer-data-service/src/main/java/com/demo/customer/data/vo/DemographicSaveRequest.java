@@ -1,7 +1,5 @@
 package com.demo.customer.data.vo;
 
-import java.util.List;
-
 import lombok.Data;
 import lombok.ToString;
 
@@ -10,6 +8,6 @@ import lombok.ToString;
 public class DemographicSaveRequest {
 	private String cuiid;
 	private Long applicationNumber;
-	private List<String> interfacesListToSaveDemographicData;
+	private PersonInterfaceDataResponse personInterfaceDataResponse;
 
 }

@@ -5,7 +5,7 @@ import java.util.Locale;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
-import com.demo.appservice.entity.Application;
+import com.demo.appservice.vo.ApplicationCreationRequest;
 import com.demo.appservice.vo.ApplicationCreationResponse;
 
 @Component
@@ -13,5 +13,5 @@ import com.demo.appservice.vo.ApplicationCreationResponse;
 public interface ApplicationService {
 
 	String verifyCustomerId(String cuiid , Locale locale,StringBuilder errorMessage);
-	ApplicationCreationResponse createApplication(Application application , Locale locale);
+	ApplicationCreationResponse createApplication(ApplicationCreationRequest application , Locale locale);
 }

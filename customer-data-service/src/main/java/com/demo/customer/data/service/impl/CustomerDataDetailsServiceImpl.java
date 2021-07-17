@@ -1,18 +1,13 @@
 package com.demo.customer.data.service.impl;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.client.RestClientException;
-import org.springframework.web.client.RestTemplate;
 
 import com.demo.customer.data.constants.CustomerDataDetailsConstants;
 import com.demo.customer.data.entity.Addresses;
@@ -39,8 +34,6 @@ public class CustomerDataDetailsServiceImpl implements CustomerDataDetailsServic
 	@Autowired
 	private AddressesRepository addressesRepository;
 
-	@Autowired
-	private RestTemplate restTemplate;
 
 	@Autowired
 	private MessageSource messageSource;
@@ -55,93 +48,74 @@ public class CustomerDataDetailsServiceImpl implements CustomerDataDetailsServic
 	@Override
 	public HttpReponseStatus saveDemographicDetails(DemographicSaveRequest demographicSaveRequest, Locale locale) {
 		HttpReponseStatus httpReponseStatus = new HttpReponseStatus();
-		// it will call getInterfaces data and will save interfaces related tables
-		// according to that//TODO
-		Map<String, Object> toSaveMapForInterfaces = getInterfaceDataForIncomingRequestEvent(demographicSaveRequest,
-				locale);
-		if (toSaveMapForInterfaces.containsKey(CustomerDataDetailsConstants.INTERFACE_NAME_PERSONAL_ERROR)) {
+		try {
+
+			if (validateSaveDemographicRequest(demographicSaveRequest, httpReponseStatus,locale)) {
+				savePersonalInterfaceData(demographicSaveRequest, demographicSaveRequest.getPersonInterfaceDataResponse());
+				httpReponseStatus.setStatus(CustomerDataDetailsConstants.SUCCESS);
+				httpReponseStatus
+				.setStatusDesc(messageSource.getMessage("application.demographic.data.saved", null, locale));
+			}else if(!CustomerDataDetailsConstants.FAILED.equalsIgnoreCase(httpReponseStatus.getStatus())) {
+				httpReponseStatus.setStatus(CustomerDataDetailsConstants.FAILED);
+				httpReponseStatus
+				.setStatusDesc(messageSource.getMessage("application.demographic.interface.data.error_4", new Object[] {CustomerDataDetailsConstants.INTERFACE_NAME_PERSONAL_INFO}, locale));
+
+			}
+		}catch(Exception exception) {
 			httpReponseStatus.setStatus(CustomerDataDetailsConstants.FAILED);
-			httpReponseStatus.setStatusDesc(
-					(String) toSaveMapForInterfaces.get(CustomerDataDetailsConstants.INTERFACE_NAME_PERSONAL_ERROR));
-		} else if (toSaveMapForInterfaces.containsKey(CustomerDataDetailsConstants.INTERFACE_NAME_FAMILY_ERROR)) {
-			// TODO
-		} else {
-			// if there is not error found in any of interfaces then start save interfaces
-			// data
-			if (toSaveMapForInterfaces.containsKey(CustomerDataDetailsConstants.INTERFACE_NAME_PERSONAL_INFO)) {
-				savePersonalInterfaceData(demographicSaveRequest, (PersonInterfaceDataResponse) toSaveMapForInterfaces
-						.get(CustomerDataDetailsConstants.INTERFACE_NAME_PERSONAL_INFO));
-			} // TODO for other interfaces
-			httpReponseStatus.setStatus(CustomerDataDetailsConstants.SUCCESS);
 			httpReponseStatus
-					.setStatusDesc(messageSource.getMessage("application.demographic.data.saved", null, locale));
+			.setStatusDesc(messageSource.getMessage("application.demographic.interface.data.error_3", new Object[] {CustomerDataDetailsConstants.INTERFACE_NAME_PERSONAL_INFO}, locale));
 		}
 		return httpReponseStatus;
 	}
-
-	private Map<String, Object> getInterfaceDataForIncomingRequestEvent(DemographicSaveRequest demographicSaveRequest,
-			Locale locale) {
-		List<String> interfacesList = demographicSaveRequest.getInterfacesListToSaveDemographicData();
-		Map<String, Object> interfaceMapDataForSave = new LinkedHashMap<>();
-		if (interfacesList.contains(CustomerDataDetailsConstants.INTERFACE_NAME_PERSONAL_INFO)) {
-			PersonInterfaceDataResponse personalDataResponse = getPersonInterfaceData(
-					demographicSaveRequest.getApplicationNumber(), demographicSaveRequest.getCuiid(), locale);
-			if (validatePersonData(personalDataResponse)) {
-				interfaceMapDataForSave.put(CustomerDataDetailsConstants.INTERFACE_NAME_PERSONAL_INFO,
-						personalDataResponse);
-			} else {
-				interfaceMapDataForSave.put(CustomerDataDetailsConstants.INTERFACE_NAME_PERSONAL_ERROR,
-						personalDataResponse != null ? personalDataResponse.getMessage()
-								: messageSource.getMessage("application.demographic.interface.data.error_2", null,
-										locale));
-			}
-		} else {
-			// TODO
+	private boolean validateSaveDemographicRequest(DemographicSaveRequest demographicSaveRequest , HttpReponseStatus httpReponseStatus,Locale locale) {
+		boolean isVlidateRequest = true;
+		if(demographicSaveRequest.getCuiid() == null) {
+			isVlidateRequest = false;
+		}else if(demographicSaveRequest.getPersonInterfaceDataResponse() == null) {
+			isVlidateRequest = false;
+		}else if(demographicSaveRequest.getPersonInterfaceDataResponse().getResponseTO() == null) {
+			isVlidateRequest = false;
 		}
-		return interfaceMapDataForSave;
-	}
-
-	private PersonInterfaceDataResponse getPersonInterfaceData(Long applicationNumber, String cuiid, Locale locale) {
-		PersonInterfaceDataResponse dataResponse = null;
-		try {
-			ResponseEntity<PersonInterfaceDataResponse> responseEntity = restTemplate.getForEntity(
-					CustomerDataDetailsConstants.URI_FOR_PERSONAL_INFO, PersonInterfaceDataResponse.class);
-
-			if (responseEntity != null && responseEntity.getBody() != null) {
-				dataResponse = responseEntity.getBody();
-			}
-		} catch (RestClientException exception) {
-			log.error("******************Exception caught in calling of getPersonInterfaceData*****************"
-					+ exception + "***" + exception.getMessage());
+		if(!isVlidateRequest) {
+			httpReponseStatus.setStatus(CustomerDataDetailsConstants.FAILED);
+			httpReponseStatus
+			.setStatusDesc(messageSource.getMessage("application.demographic.interface.data.error_4", new Object[] {CustomerDataDetailsConstants.INTERFACE_NAME_PERSONAL_INFO}, locale));
 		}
-		return dataResponse;
+		return isVlidateRequest;
 	}
 
 	public void savePersonalInterfaceData(DemographicSaveRequest demographicSaveRequest,
-			PersonInterfaceDataResponse personInterfaceDataResponse) {
+			PersonInterfaceDataResponse personInterfaceDataResponse)throws Exception {
 
-		DemographicDetails demographicDetails = demographicReposotory.findByApplicationNumberAndCuiid(
-				demographicSaveRequest.getApplicationNumber(), demographicSaveRequest.getCuiid());
-		if (demographicDetails == null)
-			demographicDetails = new DemographicDetails();
-		ResponseDTO responseDTO = personInterfaceDataResponse.getResponseTO();
-		List<AddressVO> addressVOs = responseDTO.getAddresses();
-		log.info("address*****************" + addressVOs);
+		try {
+			DemographicDetails demographicDetails = demographicReposotory.findByApplicationNumberAndCuiid(
+					demographicSaveRequest.getApplicationNumber(), demographicSaveRequest.getCuiid());
+			if (demographicDetails == null)
+				demographicDetails = new DemographicDetails();
+			ResponseDTO responseDTO = personInterfaceDataResponse.getResponseTO();
 
-		demographicDetails.setBirthDate(responseDTO.getBirthDate());
-		demographicDetails.setBirthPlaceCode(responseDTO.getBirthPlaceCode());
-		demographicDetails.setCitizenshipCode(responseDTO.getCitizenshipCode());
-		demographicDetails.setFName(responseDTO.getFirstName());
-		demographicDetails.setLName(responseDTO.getLastName());
-		demographicDetails.setGenderCode(responseDTO.getGenderCode());
-		demographicDetails.setMaritalStatusCode(responseDTO.getMaritalStatusCode());
-		populateAddress(addressVOs, demographicDetails);
-		// saving the data in Parent table demographic
-		demographicReposotory.save(demographicDetails);
+			demographicDetails.setBirthDate(responseDTO.getBirthDate());
+			demographicDetails.setBirthPlaceCode(responseDTO.getBirthPlaceCode());
+			demographicDetails.setCitizenshipCode(responseDTO.getCitizenshipCode());
+			demographicDetails.setFName(responseDTO.getFirstName());
+			demographicDetails.setLName(responseDTO.getLastName());
+			demographicDetails.setGenderCode(responseDTO.getGenderCode());
+			demographicDetails.setMaritalStatusCode(responseDTO.getMaritalStatusCode());
+			if(responseDTO.getAddresses() != null && !responseDTO.getAddresses().isEmpty() ) {
+				List<AddressVO> addressVOs = responseDTO.getAddresses() ;
+				log.info("address*****************" + addressVOs);
+				populateAddress(addressVOs, demographicDetails);
+			}
+			// saving the data in Parent table demographic
+			demographicReposotory.save(demographicDetails);
+		} catch (Exception e) {
+			throw e;
+		}
 
 	}
 
-	private void populateAddress(List<AddressVO> addressVO, DemographicDetails demographicDetails) {
+	private void populateAddress(List<AddressVO> addressVO, DemographicDetails demographicDetails)throws Exception {
 		if (addressVO != null) {
 			List<Addresses> addressesList = new ArrayList<>();
 			for (AddressVO vo : addressVO) {
@@ -163,16 +137,6 @@ public class CustomerDataDetailsServiceImpl implements CustomerDataDetailsServic
 			}
 
 		}
-	}
-
-	private boolean validatePersonData(PersonInterfaceDataResponse personInterfaceDataResponse) {
-		if (personInterfaceDataResponse == null) {
-			return false;
-		} else if (CustomerDataDetailsConstants.STATUS_FOUND
-				.equalsIgnoreCase(personInterfaceDataResponse.getStatus())) {
-			return true;
-		}
-		return false;
 	}
 
 }

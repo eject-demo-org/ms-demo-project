@@ -2,7 +2,6 @@ package com.demo.customer.data.controller;
 
 import java.util.Locale;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -19,8 +18,13 @@ import com.demo.customer.data.vo.HttpReponseStatus;
 @RequestMapping("/customerData")
 public class CustomerDataController {
 
-	@Autowired
 	private CustomerDataDetailsService customerDataDetailsService;
+	
+	public CustomerDataController(CustomerDataDetailsService customerDataDetailsService) {
+		super();
+		this.customerDataDetailsService = customerDataDetailsService;
+	}
+
 
 	@PostMapping("/getDemographicData")
 	public ResponseEntity<DemographicDetails> getDemographicData(@RequestBody DemographicDetails demographicDetails,
@@ -37,4 +41,5 @@ public class CustomerDataController {
 				customerDataDetailsService.saveDemographicDetails(demographicSaveRequest, locale), HttpStatus.OK);
 	}
 
+	
 }

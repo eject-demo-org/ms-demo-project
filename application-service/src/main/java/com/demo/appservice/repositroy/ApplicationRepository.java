@@ -9,5 +9,5 @@ import com.demo.appservice.entity.Application;
 @Repository
 public interface ApplicationRepository extends JpaRepository<Application, Long>{
 
-	Application findByCuiidAndApplicationNumber(String cuiid , Long applicationNumber);
+	Application findByApplicantDetailsCuiidAndApplicationNumber(String cuiid , Long applicationNumber);
 }
