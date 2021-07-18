@@ -77,6 +77,8 @@ public class ApplicationServiceImpl implements ApplicationService{
 		ApplicationCreationResponse applicationCreationResponse = new ApplicationCreationResponse();
 		try {
 			//calltheInterfaces for refreshing the data
+			Map<Boolean , String > saveDemographicResultMap1 = saveDemographicData(application.getCuiid(),application.getApplicationNumber(),
+					null ,locale);
 			Object object = callInterfacesRefresh(application.getCuiid() , ApplicationConstants.APPLICATION_CREATION_FLOW,locale);
 			if(object != null && object instanceof PersonInterfaceDataResponse) {//means we got the response as needed for application creation flow
 				Map<Boolean , String > saveDemographicResultMap = saveDemographicData(application.getCuiid(),application.getApplicationNumber(),
@@ -166,7 +168,7 @@ public class ApplicationServiceImpl implements ApplicationService{
 		demographicSaveRequest.setPersonInterfaceDataResponse(personInterfaceDataResponse);
 		HttpEntity<?> entity = new HttpEntity<DemographicSaveRequest>(demographicSaveRequest, headers);
 
-		ResponseEntity<HttpReponseStatus> responseEntity = restTemplate.postForEntity("http://localhost:8301/customerData/saveDemographicData", entity, HttpReponseStatus.class);
+		ResponseEntity<HttpReponseStatus> responseEntity = restTemplate.postForEntity("http://CUSTOMER-DATA-SERVICE/customerData/saveDemographicData", entity, HttpReponseStatus.class);
 		log.info("demographic service called"+responseEntity.getBody());
 		//validate demographic save event for application creation event
 		return validateDemographicServiceResponse(responseEntity);

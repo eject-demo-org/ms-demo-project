@@ -1,7 +1,7 @@
 server:
   port: 8201
   
-spring:  application:    name: application-service  messages:    encoding: UTF-8
+spring:  application:    name: APPLICATION-SERVICE  messages:    encoding: UTF-8
 eureka:
   client:
    register-with-eureka: true
