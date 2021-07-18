@@ -77,8 +77,6 @@ public class ApplicationServiceImpl implements ApplicationService{
 		ApplicationCreationResponse applicationCreationResponse = new ApplicationCreationResponse();
 		try {
 			//calltheInterfaces for refreshing the data
-			Map<Boolean , String > saveDemographicResultMap1 = saveDemographicData(application.getCuiid(),application.getApplicationNumber(),
-					null ,locale);
 			Object object = callInterfacesRefresh(application.getCuiid() , ApplicationConstants.APPLICATION_CREATION_FLOW,locale);
 			if(object != null && object instanceof PersonInterfaceDataResponse) {//means we got the response as needed for application creation flow
 				Map<Boolean , String > saveDemographicResultMap = saveDemographicData(application.getCuiid(),application.getApplicationNumber(),
