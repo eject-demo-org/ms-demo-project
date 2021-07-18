@@ -7,6 +7,7 @@ public static final String SUCCESS = "SUCCESS";
 public static final String FAILED  = "FAILED";
 public static final String APPLICATION_CREATION_FLOW="APPLICATION_CREATION_FLOW";
 public static final String INTERFACE_NAME_PERSONAL_INFO="PERSONAL";
+public static final String INTERFACE_NAME_FAMILY_INFO = "FAMILY";
 public static final String BLANK_STRING = "";
 public static final String URI_FOR_PERSONAL_INFO = "http://a79447dcfef5.ngrok.io/interface/getInterfaceData?";
 

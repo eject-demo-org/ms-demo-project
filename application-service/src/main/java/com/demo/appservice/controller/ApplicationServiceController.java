@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.demo.appservice.service.ApplicationService;
 import com.demo.appservice.vo.ApplicationCreationRequest;
 import com.demo.appservice.vo.ApplicationCreationResponse;
+import com.demo.appservice.vo.HttpReponseStatus;
 
 @RestController
 @RequestMapping("/application")
@@ -33,6 +34,12 @@ public class ApplicationServiceController {
 	public ResponseEntity<String> verifyCustomerId(@PathVariable("cuiid") String cuiid , Locale locale){
 		String isVerified = applicationService.verifyCustomerId(cuiid ,  locale ,null);
 		return new ResponseEntity<String>(isVerified,HttpStatus.OK);
+	}
+	//call family and save its data
+	@PostMapping("/callAndSave/{interfaceName}")
+	public ResponseEntity<HttpReponseStatus> callAndSaveFamilyData(@RequestBody ApplicationCreationRequest application ,@PathVariable String interfaceName, Locale locale) {
+		 return new ResponseEntity<HttpReponseStatus>(applicationService.callAndSaveByInterface(application ,interfaceName,locale)
+				,HttpStatus.OK);
 	}
 	
 	

@@ -24,6 +24,7 @@ import com.demo.appservice.service.ApplicationService;
 import com.demo.appservice.vo.ApplicationCreationRequest;
 import com.demo.appservice.vo.ApplicationCreationResponse;
 import com.demo.appservice.vo.DemographicSaveRequest;
+import com.demo.appservice.vo.FamilyDataResponse;
 import com.demo.appservice.vo.HttpReponseStatus;
 import com.demo.appservice.vo.PersonInterfaceDataResponse;
 
@@ -130,6 +131,8 @@ public class ApplicationServiceImpl implements ApplicationService{
 		log.info("**************callInterfaces***************************"+interfacesList);
 		if(interfacesList.contains(ApplicationConstants.INTERFACE_NAME_PERSONAL_INFO)){
 			object  = getPersonInterfaceData( cuiid, locale);
+		}else if(interfacesList.contains(ApplicationConstants.INTERFACE_NAME_FAMILY_INFO)){
+			object = getFamilyInterfaceData(cuiid, locale);
 		}
 		return object;
 	}
@@ -171,7 +174,6 @@ public class ApplicationServiceImpl implements ApplicationService{
 		//validate demographic save event for application creation event
 		return validateDemographicServiceResponse(responseEntity);
 	}
-	//TODO
 	private Map<Boolean , String > validateDemographicServiceResponse(ResponseEntity<HttpReponseStatus> entity) {
 		Map<Boolean , String > resultMap = new LinkedHashMap<>();
 		HttpReponseStatus responseStatus = entity.getBody();
@@ -181,6 +183,82 @@ public class ApplicationServiceImpl implements ApplicationService{
 			resultMap.put(false, responseStatus.getStatusDesc());
 		}
 		return resultMap;
+	}
+
+	private FamilyDataResponse getFamilyInterfaceData( String cuiid, Locale locale)throws RestClientException {
+		FamilyDataResponse familyDataResponse = null;
+		try {
+			ResponseEntity<FamilyDataResponse> responseEntity = restTemplate.getForEntity(
+					ApplicationConstants.URI_FOR_PERSONAL_INFO+"interfaceName="+ApplicationConstants.INTERFACE_NAME_FAMILY_INFO+"&uid="+cuiid,
+					FamilyDataResponse.class);
+			if (responseEntity != null &&responseEntity.getStatusCode() == HttpStatus.OK && responseEntity.getBody() != null) {
+				familyDataResponse =  responseEntity.getBody();
+			}
+		} catch (RestClientException exception) {
+			log.error("******************Exception caught in calling of getPersonInterfaceData*****************"
+					+ exception + "***" + exception.getMessage());
+			throw exception;
+
+		}
+		return familyDataResponse ;
+	}
+
+	private Map<Boolean, String > saveFamilyData(String uuid , Long applicationNumber , FamilyDataResponse familyDataResponse , Locale locale) {
+		HttpHeaders headers = new HttpHeaders();
+
+		headers.setContentType(MediaType.APPLICATION_JSON);
+		List<Locale> localeList = new ArrayList<>();
+		localeList.add(locale);
+		headers.setAcceptLanguageAsLocales(localeList);
+		//prepare request for demographic save
+		DemographicSaveRequest demographicSaveRequest = new DemographicSaveRequest();
+		demographicSaveRequest.setApplicationNumber(applicationNumber);
+		demographicSaveRequest.setCuiid(uuid);
+		demographicSaveRequest.setFamilyDataResponse(familyDataResponse);
+		HttpEntity<?> entity = new HttpEntity<DemographicSaveRequest>(demographicSaveRequest, headers);
+
+		ResponseEntity<HttpReponseStatus> responseEntity = restTemplate.postForEntity("http://CUSTOMER-DATA-SERVICE/customerData/saveFamilyData", entity, HttpReponseStatus.class);
+		log.info("demographic service called"+responseEntity.getBody());
+		//validate demographic save event for application creation event
+		return validateFamilyServiceResponse(responseEntity);
+	}
+	private Map<Boolean , String > validateFamilyServiceResponse(ResponseEntity<HttpReponseStatus> entity) {
+		Map<Boolean , String > resultMap = new LinkedHashMap<>();
+		HttpReponseStatus responseStatus = entity.getBody();
+		if(entity.getStatusCode() == HttpStatus.OK && ApplicationConstants.SUCCESS.equalsIgnoreCase(responseStatus.getStatus())) {
+			resultMap.put(true, "application.family.data.saved");
+		}else {
+			resultMap.put(false, responseStatus.getStatusDesc());
+		}
+		return resultMap;
+	}
+
+	@Override
+	public HttpReponseStatus callAndSaveByInterface(ApplicationCreationRequest applicationCreationRequest,
+			String interfaceName, Locale locale) {
+		HttpReponseStatus httpReponseStatus = new HttpReponseStatus();
+		try {
+			if(ApplicationConstants.INTERFACE_NAME_FAMILY_INFO.equalsIgnoreCase(interfaceName)) {
+				FamilyDataResponse familyDataResponse = 	getFamilyInterfaceData(applicationCreationRequest.getCuiid(), locale);
+				if(familyDataResponse != null ) {
+					Map<Boolean , String > saveDemographicResultMap = saveFamilyData(applicationCreationRequest.getCuiid(),applicationCreationRequest.getApplicationNumber(),
+							familyDataResponse ,locale);
+					if(saveDemographicResultMap.containsKey(true)) {
+						httpReponseStatus = setHttpResponseStatus(ApplicationConstants.SUCCESS, saveDemographicResultMap.get(true) , locale , true);
+					}else {
+						String errorKey = saveDemographicResultMap.get(false);
+						httpReponseStatus = setHttpResponseStatus(ApplicationConstants.FAILED,errorKey ,locale,false);
+					}
+				}else {
+					//error response need to send to application
+					String errorKey = "application.creation.family.interface.error";
+					httpReponseStatus = setHttpResponseStatus(ApplicationConstants.FAILED,errorKey ,locale,true);
+				}
+			}
+		} catch (Exception exception) {
+			httpReponseStatus = setHttpResponseStatus(ApplicationConstants.FAILED,"application.creation.family.interface.error" ,locale,true);
+		}
+		return httpReponseStatus;
 	}
 
 }
