@@ -26,6 +26,7 @@ import com.demo.appservice.vo.ApplicationCreationResponse;
 import com.demo.appservice.vo.DemographicSaveRequest;
 import com.demo.appservice.vo.FamilyDataResponse;
 import com.demo.appservice.vo.HttpReponseStatus;
+import com.demo.appservice.vo.InterfaceResponseVO;
 import com.demo.appservice.vo.PersonInterfaceDataResponse;
 
 import lombok.extern.slf4j.Slf4j;
@@ -185,12 +186,12 @@ public class ApplicationServiceImpl implements ApplicationService{
 		return resultMap;
 	}
 
-	private FamilyDataResponse getFamilyInterfaceData( String cuiid, Locale locale)throws RestClientException {
-		FamilyDataResponse familyDataResponse = null;
+	private InterfaceResponseVO getFamilyInterfaceData( String cuiid, Locale locale)throws RestClientException {
+		InterfaceResponseVO familyDataResponse = null;
 		try {
-			ResponseEntity<FamilyDataResponse> responseEntity = restTemplate.getForEntity(
+			ResponseEntity<InterfaceResponseVO> responseEntity = restTemplate.getForEntity(
 					ApplicationConstants.URI_FOR_PERSONAL_INFO+"interfaceName="+ApplicationConstants.INTERFACE_NAME_FAMILY_INFO+"&uid="+cuiid,
-					FamilyDataResponse.class);
+					InterfaceResponseVO.class);
 			if (responseEntity != null &&responseEntity.getStatusCode() == HttpStatus.OK && responseEntity.getBody() != null) {
 				familyDataResponse =  responseEntity.getBody();
 			}
@@ -239,10 +240,10 @@ public class ApplicationServiceImpl implements ApplicationService{
 		HttpReponseStatus httpReponseStatus = new HttpReponseStatus();
 		try {
 			if(ApplicationConstants.INTERFACE_NAME_FAMILY_INFO.equalsIgnoreCase(interfaceName)) {
-				FamilyDataResponse familyDataResponse = 	getFamilyInterfaceData(applicationCreationRequest.getCuiid(), locale);
-				if(familyDataResponse != null ) {
+				InterfaceResponseVO familyDataResponse = 	getFamilyInterfaceData(applicationCreationRequest.getCuiid(), locale);
+				if(familyDataResponse != null && familyDataResponse.getStatus().equalsIgnoreCase(ApplicationConstants.STATUS_FOUND)) {
 					Map<Boolean , String > saveDemographicResultMap = saveFamilyData(applicationCreationRequest.getCuiid(),applicationCreationRequest.getApplicationNumber(),
-							familyDataResponse ,locale);
+							familyDataResponse.getFamilyDataResponse() ,locale);
 					if(saveDemographicResultMap.containsKey(true)) {
 						httpReponseStatus = setHttpResponseStatus(ApplicationConstants.SUCCESS, saveDemographicResultMap.get(true) , locale , true);
 					}else {

@@ -8,11 +8,8 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class PersonInterfaceDataResponse {
-
 	private String status;
-
 	private String message;
-
 	private ResponseDTO responseTO;
 
 }
