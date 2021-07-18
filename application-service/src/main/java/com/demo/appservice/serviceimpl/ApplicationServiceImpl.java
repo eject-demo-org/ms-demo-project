@@ -243,7 +243,7 @@ public class ApplicationServiceImpl implements ApplicationService{
 				InterfaceResponseVO familyDataResponse = 	getFamilyInterfaceData(applicationCreationRequest.getCuiid(), locale);
 				if(familyDataResponse != null && familyDataResponse.getStatus().equalsIgnoreCase(ApplicationConstants.STATUS_FOUND)) {
 					Map<Boolean , String > saveDemographicResultMap = saveFamilyData(applicationCreationRequest.getCuiid(),applicationCreationRequest.getApplicationNumber(),
-							familyDataResponse.getFamilyDataResponse() ,locale);
+							familyDataResponse.getFamilyData() ,locale);
 					if(saveDemographicResultMap.containsKey(true)) {
 						httpReponseStatus = setHttpResponseStatus(ApplicationConstants.SUCCESS, saveDemographicResultMap.get(true) , locale , true);
 					}else {
