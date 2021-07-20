@@ -15,7 +15,6 @@ import lombok.Setter;
 public class FamilyInfoDTO {
 	
 	private UUID uuid;
-	
 	private String id;
 	private String spouseId;
 	private String spouseName;

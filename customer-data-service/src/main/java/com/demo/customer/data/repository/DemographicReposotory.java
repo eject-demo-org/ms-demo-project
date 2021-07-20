@@ -9,5 +9,7 @@ import com.demo.customer.data.entity.DemographicDetails;
 public interface DemographicReposotory extends JpaRepository<DemographicDetails, Long> {
 
 	DemographicDetails findByApplicationNumberAndCuiid(Long applicationNumber, String cuiid);
+	
+	DemographicDetails findByCuiid( String cuiid);
 
 }

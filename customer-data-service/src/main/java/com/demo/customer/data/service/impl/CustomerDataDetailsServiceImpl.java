@@ -12,11 +12,16 @@ import org.springframework.transaction.annotation.Transactional;
 import com.demo.customer.data.constants.CustomerDataDetailsConstants;
 import com.demo.customer.data.entity.Addresses;
 import com.demo.customer.data.entity.DemographicDetails;
+import com.demo.customer.data.entity.FamilyDeatils;
+import com.demo.customer.data.entity.FamilyRelationDetails;
 import com.demo.customer.data.repository.AddressesRepository;
 import com.demo.customer.data.repository.DemographicReposotory;
+import com.demo.customer.data.repository.FamilyDetailsRepository;
+import com.demo.customer.data.repository.FamilyRelationDetailsRepository;
 import com.demo.customer.data.service.CustomerDataDetailsService;
 import com.demo.customer.data.vo.AddressVO;
 import com.demo.customer.data.vo.DemographicSaveRequest;
+import com.demo.customer.data.vo.FamilyDataResponse;
 import com.demo.customer.data.vo.HttpReponseStatus;
 import com.demo.customer.data.vo.PersonInterfaceDataResponse;
 import com.demo.customer.data.vo.ResponseDTO;
@@ -33,6 +38,12 @@ public class CustomerDataDetailsServiceImpl implements CustomerDataDetailsServic
 
 	@Autowired
 	private AddressesRepository addressesRepository;
+	
+	@Autowired
+	private FamilyRelationDetailsRepository familyRelationDetailsRepository;
+	
+	@Autowired
+	private FamilyDetailsRepository familyDetailsRepository;;
 
 
 	@Autowired
@@ -136,6 +147,79 @@ public class CustomerDataDetailsServiceImpl implements CustomerDataDetailsServic
 				demographicDetails.setAddresses(addressesList);
 			}
 
+		}
+	}
+
+	@Override
+	public HttpReponseStatus saveFamilyData(DemographicSaveRequest demographicSaveRequest, Locale locale) {
+		HttpReponseStatus httpReponseStatus = new HttpReponseStatus();
+		try {
+			if(validateSaveFamilyData(demographicSaveRequest , httpReponseStatus,locale)) {
+				saveFamilyData(demographicSaveRequest);
+				httpReponseStatus.setStatus(CustomerDataDetailsConstants.SUCCESS);
+				httpReponseStatus
+				.setStatusDesc(messageSource.getMessage("application.family.data.saved", null, locale));
+			}else if(!CustomerDataDetailsConstants.FAILED.equalsIgnoreCase(httpReponseStatus.getStatus())) {
+				httpReponseStatus.setStatus(CustomerDataDetailsConstants.FAILED);
+				httpReponseStatus
+				.setStatusDesc(messageSource.getMessage("application.demographic.interface.data.error_4", new Object[] {CustomerDataDetailsConstants.INTERFACE_NAME_FAMILY_INFO}, locale));
+
+			}
+		} catch (Exception exception) {
+			httpReponseStatus.setStatus(CustomerDataDetailsConstants.FAILED);
+			httpReponseStatus
+			.setStatusDesc(messageSource.getMessage("application.demographic.interface.data.error_3", new Object[] {CustomerDataDetailsConstants.INTERFACE_NAME_FAMILY_INFO}, locale));
+		}
+		return httpReponseStatus;
+	}
+
+	private boolean validateSaveFamilyData(DemographicSaveRequest demographicSaveRequest , HttpReponseStatus httpReponseStatus, Locale locale)throws Exception {
+		boolean isValidateFamilyReq = true;
+		if(demographicSaveRequest.getCuiid() == null)
+			isValidateFamilyReq = false;
+		else if(demographicSaveRequest.getFamilyDataResponse() == null)
+			isValidateFamilyReq = false;
+		if(!isValidateFamilyReq) {
+			httpReponseStatus.setStatus(CustomerDataDetailsConstants.FAILED);
+			httpReponseStatus.setStatusDesc(messageSource.getMessage("application.demographic.interface.data.error_3", new Object[] {CustomerDataDetailsConstants.INTERFACE_NAME_FAMILY_INFO}, locale));
+		}
+		return isValidateFamilyReq;
+	}
+	private void saveFamilyData(DemographicSaveRequest demographicSaveRequest) throws Exception {
+		DemographicDetails demographicDetails = demographicReposotory.findByCuiid(demographicSaveRequest.getCuiid());
+		if(demographicDetails !=null) {
+			FamilyDeatils familyDeatils = demographicDetails.getFamilyDeatils();
+			familyDeatils = familyDeatils == null ? new FamilyDeatils() : familyDeatils;
+			//set all parent values
+			FamilyDataResponse familyDataResponse =  demographicSaveRequest.getFamilyDataResponse();
+			familyDeatils.setBaseId(familyDataResponse.getBaseId());
+			familyDeatils.setChildrenCount(familyDataResponse.getChildrenCount());
+			familyDeatils.setDemographicDetails(demographicDetails);
+			familyDeatils.setFamilyCount(familyDataResponse.getFamilyCount());
+			familyDeatils.setFamilyHeadId(familyDataResponse.getFamilyHeadId());
+			familyDeatils.setSpouseName(familyDataResponse.getSpouseName());
+			familyDeatils.setSpouseId(familyDataResponse.getSpouseId());
+			familyDeatils.setMarriageDate(familyDataResponse.getMarriageDate());
+			populateFamilyRelationDetails(familyDataResponse, familyDeatils);
+			familyDetailsRepository.save(familyDeatils);
+		}else {
+			throw new Exception("No Data Found");
+		}
+	}
+	private void populateFamilyRelationDetails(FamilyDataResponse dataResponse,FamilyDeatils familyDeatils) {
+		if(dataResponse.getDetails() != null && !dataResponse.getDetails().isEmpty()) {
+			List<FamilyRelationDetails> listFamilyRelationDetails = new ArrayList<>();
+			dataResponse.getDetails().forEach(relationVO->{
+			 FamilyRelationDetails familyRelationDetails = familyRelationDetailsRepository.findByFamilyDeatilsFamilyIdAndNameLike(familyDeatils.getFamilyId(), relationVO.getName());
+			 familyRelationDetails = familyRelationDetails == null ? new  FamilyRelationDetails() : familyRelationDetails;
+			 familyRelationDetails.setFamilyDeatils(familyDeatils);
+			 familyRelationDetails.setGender(relationVO.getGender());
+			 familyRelationDetails.setName(relationVO.getName());
+			 familyRelationDetails.setRelation(relationVO.getRelation());
+			 familyRelationDetails.setRelationDesc(relationVO.getRelationDesc());
+			 listFamilyRelationDetails.add(familyRelationDetails);
+			});
+			familyDeatils.setFamilyRelationDetails(listFamilyRelationDetails);
 		}
 	}
 

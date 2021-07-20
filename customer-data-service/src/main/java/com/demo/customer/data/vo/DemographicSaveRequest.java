@@ -9,5 +9,6 @@ public class DemographicSaveRequest {
 	private String cuiid;
 	private Long applicationNumber;
 	private PersonInterfaceDataResponse personInterfaceDataResponse;
+	private FamilyDataResponse familyDataResponse;
 
 }

@@ -17,4 +17,6 @@ public interface CustomerDataDetailsService {
 			Locale locale);
 
 	HttpReponseStatus saveDemographicDetails(DemographicSaveRequest demographicSaveRequest, Locale locale);
+
+	HttpReponseStatus saveFamilyData(DemographicSaveRequest demographicSaveRequest, Locale locale);
 }

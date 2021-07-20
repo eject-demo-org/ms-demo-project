@@ -10,6 +10,7 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.OneToMany;
+import javax.persistence.OneToOne;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -38,5 +39,9 @@ public class DemographicDetails {
 
 	@OneToMany(mappedBy = "demographicDetails", cascade = CascadeType.ALL)
 	private List<Addresses> addresses;
+	
+	
+	@OneToOne(mappedBy = "demographicDetails", cascade = CascadeType.ALL)
+	private FamilyDeatils familyDeatils;
 
 }

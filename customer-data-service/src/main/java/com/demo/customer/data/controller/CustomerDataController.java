@@ -40,6 +40,15 @@ public class CustomerDataController {
 		return new ResponseEntity<HttpReponseStatus>(
 				customerDataDetailsService.saveDemographicDetails(demographicSaveRequest, locale), HttpStatus.OK);
 	}
+	
+	@PostMapping("/saveFamilyData")
+	public ResponseEntity<HttpReponseStatus> saveFamilyData(
+			@RequestBody DemographicSaveRequest demographicSaveRequest, Locale locale) {
+		return new ResponseEntity<HttpReponseStatus>(
+				customerDataDetailsService.saveFamilyData(demographicSaveRequest, locale), HttpStatus.OK);
+	}
+	
+	
 
 	
 }
